@@ -1,0 +1,565 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Light Sequence Generator | LED Magic</title>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap">
+    <style>
+        :root {
+            --primary: #4a6fff;
+            --primary-dark: #3a57d0;
+            --secondary: #ff5e7a;
+            --text: #2b2b36;
+            --text-light: #6e7191;
+            --bg: #f7f7fc;
+            --white: #ffffff;
+            --shadow: 0 8px 30px rgba(0, 0, 0, 0.12);
+            --border-radius: 12px;
+            --transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg);
+            color: var(--text);
+            line-height: 1.6;
+            overflow-x: hidden;
+            min-height: 100vh;
+            position: relative;
+        }
+
+        .background {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image: url('https://images.unsplash.com/photo-1550684848-fac1c5b4e853');
+            background-size: cover;
+            background-position: center;
+            filter: blur(10px);
+            transform: scale(1.1);
+            z-index: -1;
+        }
+
+        .bg-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, rgba(0, 0, 0, 0.7) 0%, rgba(25, 25, 112, 0.6) 100%);
+            z-index: -1;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 40px 20px;
+            position: relative;
+        }
+
+        .app-card {
+            background-color: rgba(255, 255, 255, 0.95);
+            border-radius: var(--border-radius);
+            box-shadow: var(--shadow);
+            padding: 40px;
+            margin-top: 40px;
+            backdrop-filter: blur(10px);
+            transition: var(--transition);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        .logo {
+            font-size: 28px;
+            font-weight: 700;
+            margin-bottom: 10px;
+            background: linear-gradient(90deg, var(--primary), var(--secondary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            display: inline-block;
+        }
+
+        .subtitle {
+            color: var(--white);
+            font-size: 18px;
+            max-width: 600px;
+            margin: 0 auto;
+            animation: fadeInUp 0.8s ease-out 0.2s both;
+        }
+
+        .form-group {
+            margin-bottom: 25px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 10px;
+            font-weight: 600;
+            color: var(--text);
+        }
+
+        textarea {
+            width: 100%;
+            padding: 16px;
+            border: 2px solid #e0e0e0;
+            border-radius: var(--border-radius);
+            font-family: 'Inter', sans-serif;
+            font-size: 16px;
+            color: var(--text);
+            background-color: rgba(255, 255, 255, 0.8);
+            min-height: 150px;
+            transition: var(--transition);
+        }
+
+        textarea:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 4px rgba(74, 111, 255, 0.1);
+        }
+
+        button {
+            background: linear-gradient(90deg, var(--primary), var(--primary-dark));
+            color: white;
+            border: none;
+            border-radius: var(--border-radius);
+            padding: 14px 24px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            display: inline-block;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 8px 15px rgba(74, 111, 255, 0.2);
+            width: 100%;
+        }
+
+        button::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+            transition: all 0.6s ease;
+        }
+
+        button:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 12px 20px rgba(74, 111, 255, 0.3);
+        }
+
+        button:hover::before {
+            left: 100%;
+        }
+
+        button:active {
+            transform: translateY(0);
+        }
+
+        button:disabled {
+            background: #a5a5a5;
+            cursor: not-allowed;
+            transform: translateY(0);
+            box-shadow: none;
+        }
+
+        #loading {
+            display: none;
+            text-align: center;
+            margin: 20px 0;
+            color: var(--text-light);
+            font-weight: 500;
+        }
+
+        .loader {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(74, 111, 255, 0.3);
+            border-radius: 50%;
+            border-top-color: var(--primary);
+            animation: spin 1s ease-in-out infinite;
+            margin-right: 10px;
+            vertical-align: middle;
+        }
+
+        #error {
+            color: var(--secondary);
+            margin: 15px 0;
+            padding: 15px;
+            border-radius: var(--border-radius);
+            background-color: rgba(255, 94, 122, 0.1);
+            display: none;
+        }
+
+        .result-container {
+            margin-top: 30px;
+            border-radius: var(--border-radius);
+            overflow: hidden;
+            box-shadow: var(--shadow);
+            opacity: 0;
+            transform: translateY(20px);
+            transition: all 0.5s ease;
+        }
+
+        .result-container.show {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .result-header {
+            background: linear-gradient(90deg, var(--primary), var(--primary-dark));
+            color: white;
+            padding: 12px 20px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .result-copy {
+            background: none;
+            border: none;
+            color: white;
+            cursor: pointer;
+            font-size: 14px;
+            padding: 0;
+            display: flex;
+            align-items: center;
+            box-shadow: none;
+            width: auto;
+        }
+
+        .result-copy:hover {
+            text-decoration: underline;
+            transform: none;
+            box-shadow: none;
+        }
+
+        #result {
+            padding: 20px;
+            white-space: pre-wrap;
+            background-color: white;
+            min-height: 50px;
+            font-family: 'Courier New', monospace;
+            line-height: 1.5;
+            overflow-x: auto;
+            color: var(--text);
+        }
+
+        /* Типографіка з ефектом машинопису */
+        .typing-effect {
+            overflow: hidden;
+            border-right: 0.15em solid var(--primary);
+            white-space: nowrap;
+            margin: 0 auto;
+            animation: typing 3.5s steps(40, end), blink-caret 0.75s step-end infinite;
+        }
+
+        /* Плавні анімації */
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes pulse {
+            0% {
+                transform: scale(1);
+                opacity: 1;
+            }
+            50% {
+                transform: scale(1.05);
+                opacity: 0.8;
+            }
+            100% {
+                transform: scale(1);
+                opacity: 1;
+            }
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        @keyframes typing {
+            from {
+                width: 0;
+            }
+            to {
+                width: 100%;
+            }
+        }
+
+        @keyframes blink-caret {
+            from, to {
+                border-color: transparent;
+            }
+            50% {
+                border-color: var(--primary);
+            }
+        }
+
+        /* Анімація для елементів інтерфейсу */
+        .app-card {
+            animation: fadeInUp 0.8s ease-out both;
+        }
+
+        /* Адаптивний дизайн */
+        @media (max-width: 768px) {
+            .app-card {
+                padding: 25px;
+            }
+            .header {
+                margin-bottom: 30px;
+            }
+            .logo {
+                font-size: 24px;
+            }
+            .subtitle {
+                font-size: 16px;
+            }
+            .result-header {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+            .result-copy {
+                margin-top: 10px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="background"></div>
+    <div class="bg-overlay"></div>
+
+    <div class="container">
+        <div class="header">
+            <h1 class="logo">LED Magic</h1>
+            <p class="subtitle">Create amazing light sequences for your LED projects</p>
+        </div>
+
+        <div class="app-card">
+            <div class="form-group">
+                <label for="prompt">Describe your desired light sequence:</label>
+                <textarea id="prompt" placeholder="For example: 'Create a rainbow sequence with 5 colors and smooth transitions...'"></textarea>
+            </div>
+            <button id="generateBtn">
+                <span>Generate Sequence</span>
+            </button>
+            <div id="loading">
+                <span class="loader"></span>
+                Generating sequence... This may take a few seconds.
+            </div>
+            <div id="error"></div>
+
+            <div class="result-container" id="resultContainer">
+                <div class="result-header">
+                    <span>Generated Sequence</span>
+                    <button class="result-copy" id="copyBtn">
+                        Copy
+                    </button>
+                </div>
+                <div id="result"></div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        // Клас для роботи з Hugging Face API (Mistral-7B-Instruct-v0.2)
+        class MistralColorGenerator {
+            constructor(apiKey) {
+                this.apiKey = apiKey;
+                this.apiUrl = "https://api-inference.huggingface.co/models/mistralai/Mistral-7B-Instruct-v0.2";
+            }
+
+            async generateSequence(prompt) {
+                const systemPrompt = `You are an expert AI system that creates color sequences for an interactive lighting system.
+                
+                Your main tasks:
+                1. Generate and edit color sequences in format COLOR@TIME, where 
+                        - COLOR is a HEX color code (e.g., FF0000 for red)
+                        - TIME is the time in milliseconds during which this block is displayed, in 4-digit format (e.g., 0100 for 100 ms)
+                        
+                2. Ensure smooth transitions (fade transitions) between colors 
+                        - Fade happens automatically between two blocks if no sharp transition is specified 
+                        - To create a sharp transition, add another block with the previous color and time @0000. For example:
+                        0000FF@0100;   0000FF@0000;    FF0000@0200;
+                    This means that blue color lasts for 100 ms, then sharply transitions to red.
+                
+                3. When building a sequence, consider the transition style: 
+                        - Smooth transition is used to create soft change without delays is needed 
+                        - Sharp transition is used to create a fast change with no delay is needed 
+                
+                4. Generate a description of the timeline simulation based on the sequence:
+                        - Each block is shown on the timeline 
+                        - The distance between blocks on the diagram corresponds to the TIME value (time in ms)
+                
+                5. Expect reply comments from the user and be ready to edit the sequence or add new instructions 
+                
+                6. Always respond in English. The answer should be clear and in structured format.`;
+
+                const fullPrompt = `<s>[INST] ${systemPrompt} [/INST]
+                
+                [INST] ${prompt} [/INST]</s>`;
+
+                try {
+                    const response = await fetch(this.apiUrl, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${this.apiKey}`
+                        },
+                        body: JSON.stringify({
+                            inputs: fullPrompt,
+                            parameters: {
+                                max_new_tokens: 1000,
+                                temperature: 0.7,
+                                return_full_text: false
+                            }
+                        })
+                    });
+
+                    if (!response.ok) {
+                        throw new Error(`API відповіла з кодом ${response.status}`);
+                    }
+
+                    const result = await response.json();
+                    
+                    // Hugging Face API повертає результат у іншому форматі
+                    if (typeof result === 'string') {
+                        return result;
+                    } else if (Array.isArray(result) && result.length > 0) {
+                        return result[0].generated_text;
+                    } else {
+                        console.log("Отримано неочікуваний формат відповіді:", result);
+                        return result.generated_text || JSON.stringify(result);
+                    }
+                } catch (error) {
+                    console.error("Помилка при запиті до Hugging Face API:", error);
+                    throw error;
+                }
+            }
+        }
+
+        // Функція для ефекту друкування тексту
+        function typeText(element, text, speed = 30) {
+            let i = 0;
+            element.textContent = '';
+            
+            function type() {
+                if (i < text.length) {
+                    element.textContent += text.charAt(i);
+                    i++;
+                    setTimeout(type, speed);
+                }
+            }
+            
+            type();
+        }
+
+        app = Flask(__name__)
+
+
+        // Ініціалізація після завантаження сторінки
+        document.addEventListener('DOMContentLoaded', function() {
+            const button = document.getElementById('generateBtn');
+            const input = document.getElementById('prompt');
+            const result = document.getElementById('result');
+            const loading = document.getElementById('loading');
+            const error = document.getElementById('error');
+            const resultContainer = document.getElementById('resultContainer');
+            const copyBtn = document.getElementById('copyBtn');
+            
+            // ============================================
+            // ВСТАВТЕ ВАШ API КЛЮЧ ТУТ ↓
+            const apiKey = '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';
+            // ============================================
+            
+            const generator = new MistralColorGenerator(apiKey);
+            
+            // Ховаємо контейнер результату при завантаженні
+            resultContainer.style.display = 'none';
+            
+            // Обробник кнопки генерації
+            button.addEventListener('click', async () => {
+                const prompt = input.value;
+                
+                if (!prompt.trim()) {
+                    error.style.display = 'block';
+                    error.textContent = 'Please enter a prompt to generate a sequence';
+                    return;
+                }
+                
+                button.disabled = true;
+                loading.style.display = 'block';
+                error.style.display = 'none';
+                resultContainer.style.display = 'none';
+                
+                try {
+                    const response = await generator.generateSequence(prompt);
+                    
+                    // Показуємо контейнер результату
+                    resultContainer.style.display = 'block';
+                    
+                    // Анімація появи результату
+                    setTimeout(() => {
+                        resultContainer.classList.add('show');
+                        // Ефект друкування для результату
+                        typeText(result, response, 5);
+                    }, 300);
+                    
+                } catch (err) {
+                    error.style.display = 'block';
+                    error.textContent = `Помилка: ${err.message}`;
+                    console.error(err);
+                } finally {
+                    button.disabled = false;
+                    loading.style.display = 'none';
+                }
+            });
+            
+            copyBtn.addEventListener('click', () => {
+                const textToCopy = result.textContent;
+                navigator.clipboard.writeText(textToCopy).then(() => {
+                    const originalText = copyBtn.textContent;
+                    copyBtn.textContent = 'Copied!';
+                    setTimeout(() => {
+                        copyBtn.textContent = originalText;
+                    }, 2000);
+                });
+            });
+            
+            input.addEventListener('focus', function() {
+                this.parentElement.classList.add('focused');
+            });
+            
+            input.addEventListener('blur', function() {
+                this.parentElement.classList.remove('focused');
+            });
+        });
+    </script>
+</body>
+</html> 
